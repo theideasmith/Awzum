@@ -1,4 +1,3 @@
-require 'set'
 class Token
 	attr_accessor :token, :value 
 	def initialize t, v
@@ -9,160 +8,109 @@ end
 
 
 class Lexer
-	KEYWORDS = ["def","class","if","else","elsif","true","false","nil"]
+	KEYWORDS = ["def","class","if","else","elsif","while","true","false","nil"]
 	TOKENS = {
-				id: /([a-z]+)/,
-				constant: /([A-Z]+)/,
-				number: /([0-9]+)/,
-				string: /"([^"]*)"/,
+				id: /\A([a-z]\w*)/,
+				constant: /\A([A-Z]\w*)/,
+				number: /\A([0-9]+)/,
+				string: /\A"([^"]*)"/,
+				block_start:/\A(\{)/,
+				block_end:/\A(\})/,
 				indent_tabs: /\:\n( +)/m,
-				indent_spaces:/\n( *)/m,
-				operator: /(\|\||&&|==|!=|<=|>=)/,
-				space: /( +)/,
-				other: /(.)+/
+				indent_spaces:/\A\n( *)/m,
+				operator: /\A(\|\||&&|==|!=|<=|>=|<|>)/,
+				space: /\A /,
+				other: /\A./
 			}
-	attr_accessor :token_operations, :indent, :indent_stack
-
-	def initialize
-
-
-		@token_operations = Hash.new
-		@indent = 0
-		@indent_stack = []
-		#By storing the various reactions to regexs in a dictionary, it makes expanding the parser much easier and is one level below building a custom parser
-		@token_operations[:id] = lambda do |regex, string, array|
-			if match = string[regex,1]
-				# puts "#{string}|#{match}|#{match.size}"
-
-				if KEYWORDS.include? match
-					array << Token.new(match.upcase.to_sym, match)
-				else 
-					array << Token.new(:IDENTIFIDER, match)
-				end	
-				return match.size
-			end
-			0
-		end
-		
-		@token_operations[:constant] = lambda do |regex, string, array|
-			if match = string[regex,1]
-				array << Token.new(match.upcase.to_sym, match)
-				return match.size
-			end
-			0
-		end
-
-		@token_operations[:number] = lambda do |regex, string, array|
-			if match = string[regex,1]
-				array << Token.new(match.upcase.to_sym, match)
-				return match.size			
-			end
-			0
-		end
-
-		@token_operations[:string] = lambda do |regex, string, array|
-			if match = string[regex,1]
-				array << Token.new(match.upcase.to_sym, match)
-				return match.size+2	
-			end	
-			0
-		end
-		
-		@token_operations[:indent_tabs] = lambda do |regex, string, array|
-			if match = string[regex,1]
-				raise "Indent level inconsistent. Got #{match.size} >> expected #{@indent}" if match.size <= @indent
-				@indent =match.size
-				num = @indent
-				@indent_stack.push num
-				array << Token.new(match.upcase.to_sym, match)
-				return match.size+2
-			end
-			0
-		end
-		@token_operations[:indent_spaces] = lambda do |regex, string, array|
-			if match = string[regex,1]
-				if match.size == @indent 
-	              array << [:NEWLINE, "\n"] # Nothing to do, we're still in the same block
-	            elsif match.size < @indent # Case 3
-	              while match.size < @indent
-	                @indent_stack.pop
-	                @indent = @indent_stack.last || 0
-	                array << [:DEDENT, match.size]
-	              end
-	              array << [:NEWLINE, "\n"]
-	            else # indent.size > current_indent, error!
-	              raise "Missing ':'" # Cannot increase indent level without using ":"
-	            end
-	            return match.size + 1
-	        end
-	        	 0
-		end
-
-		@token_operations[:operator] = lambda do |regex, string, array|
-			if match = string[regex,1]
-				array << [string, string]
-				return match.size
-			end
-			0
-		end
-
-		@token_operations[:space] = lambda do |regex, string, array|
-			return 1 if string.match regex #Will increment the current index in the code by 1
-		end
-
-		@token_operations[:other] =lambda do |regex, string, array|
-			op = string[0,1]
-	           array << Token.new(op.to_sym, op)
-	        1 
-		end
-		raise "Token operations is not fitted to all availbale tokens:
-		       Ops   : #{@token_operations.keys},
-		       Tokens: #{TOKENS.keys}" unless (@token_operations.keys.to_set.subset? TOKENS.keys.to_set) 
-	end
+	
 
 	def tokenize code
 		code.chomp! #Removing all newline characters and other ugly parts of the string we dont really like. 
 		tokens = []
-		@indent = 0
-		@indent_stack = []
-		i = 0 #Current index of code being read
-		while i < code.size #run through entire code
-			puts "#{code[i]}"
-			codon = code[i..-1]
 
-			should_stop = false
-			keys = TOKENS.keys
-			ind = 0
-			increment = 0
-			until should_stop
-				key = keys[ind]
-				#----
-				regex = TOKENS[key]
-				method = @token_operations[key]
-				#-----
-				incr = method.call(regex, codon, tokens)
-				if incr > 0
-					should_stop = true
-					increment = incr+1
+		scope = 0
+		indent_stack = []
+
+		block_forward = 0
+		block_backward = 0
+
+		index = 0
+		until index == code.size
+			puts code[index]
+			codon = code[index..-1] #Biology class is getting the best of me
+			vars = {}
+			if id = codon[/\A([a-z]\w*)/,1]
+				if KEYWORDS.include?(id)
+					vars = {token: id.upcase.to_sym, value:id, jump:id.size}
+				else
+					vars = {token: :IDENTIFIER,value:id, jump:id.size}
 				end
-				ind+=1
+			elsif constant = codon[/\A([A-Z]\w*)/,1]
+				vars = {token: :CONSTANT,value:constant, jump:constant.size}
+			elsif number = codon[/\A([0-9]+)/,1]
+				vars = {token: :NUMBER,value:number.to_i, jump:number.size}
+			
+			elsif string = codon[/\A"([^"]*)"/,1]
+				vars = {token: :STRING,value:string, jump:string.size+2}
+
+			# elsif block_start = codon[TOKENS[:block_start],1]
+			# 	block_forward+=1
+			# 	var = {token: :BLOCK_BEGIN,value:"{",jump:1}
+			
+			# elsif block_end = codon[TOKENS[:block_end],1]
+			# 	block_backward+=1
+			# 	var = {token: :BLOCK_END,value:"}",jump:1}
+			# 	raise "Extraneous closing brace - } -  " if block_backward > block_forward
+			# 	raise "Expecting }" if block_backward < block_forward
+			elsif indent = codon[/\:\n( +)/m,1]
+				 # indent increases when hitting block
+				if indent.size <= scope
+				 	raise "Bad indent level, got #{indent.size} indents, expected > #{scope}"
+	            end
+	            scope = indent.size 
+	            indent_stack.push(scope)
+	            vars = {token: :INDENT,value:indent.size, jump:indent.size+2}
+			elsif indent = codon[/\A\n( *)/m,1]
+
+				if indent.size == scope
+					vars = {token: :NEWLINE, value:"\n", jump:0}
+
+				elsif indent.size < scope
+					 while indent.size < scope
+			            indent_stack.pop
+			            scope = indent_stack.last || 0
+			            tokens << [:DEDENT, indent.size]
+			          end
+			          tokens << [:NEWLINE, "\n"]
+				else 
+					raise "Missing ':'. Cannot increase indent level from #{scope} to #{indent.size} without ':' "
+				end
+				index+=(indent_spaces.size+1)
+			elsif operator = codon[/\A(\|\||&&|==|!=|<=|>=)/,1]
+				vars = {token: operator,value:operator, jump:operator.size}
+			
+			elsif space = codon.match(/\A /)
+				index+=1
+			else 
+				operator_other = codon[0,1]
+				vars = {token: operator_other,value:operator_other, jump: 1}
+			
 			end
-			i+=increment
+			tokens << [vars[:token],vars[:value]] if vars[:token] && vars[:value]
+			index+= vars[:jump] if vars[:jump]# Token.new(vars[:token],vars[:value]) 
 
+			while scope = indent_stack.pop
+				tokens << [:DEDENT,(indent_stack.first || 0)] #Token.new(:DEDENT, indent_stack.first || 0)
+			end
 
-			while @indent = @indent_stack.pop #Close any blocks that end without a dedent
-       			tokens << [:DEDENT, @indent_stack.first || 0]
-    		end 
 		end
+		puts tokens.inspect
 		tokens
 	end
 end
+ code = "Hello"
 
-x = Lexer.new.tokenize(
-"if x > 2:")
-
-
-x.each {|i|puts i.inspect}
+puts Lexer.new.tokenize(code).inspect
 
 
 

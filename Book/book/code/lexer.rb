@@ -1,4 +1,4 @@
-# Our lexer will be used like so: `Lexer.new.tokenize("code")`,
+
 # and will return an array of tokens (a token being a tuple of `[TOKEN_TYPE, TOKEN_VALUE]`).
 class Lexer
   # First we define the special keywords of our language in a constant.
