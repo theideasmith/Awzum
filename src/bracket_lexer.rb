@@ -5,7 +5,7 @@ class Token
     @token, @value = t, v
   end
 end
-class Lexer
+class BracketLexer
   KEYWORDS = ["true","false","if","elsif","else","while","case","when","do","class","def","nil"]
     def tokenize(code)
     code.chomp! 
@@ -13,8 +13,8 @@ class Lexer
     current_indent = 0 
     indent_stack = []
    
-    # bracket_start = 0
-    # bracked_end   = 0 
+    bracket_start = 0
+    bracket_end   = 0 
 
     index = 0 # Current reading index
     while index < code.size
@@ -27,8 +27,6 @@ class Lexer
     From here and onwards, my strategy is to follow the book as closely as I can, learn from what the book does,
     and then implement a language COMPLETELY on my own using what I learned from following the book.
     Before I lead myself, I must follow someone else.   
-
-    Note: Is it a bad idea to design this language where scope can be defined using both {} and indents, or should it just stick to one?
 =end
       if identifier = codon[/\A([a-z]\w*)/, 1]
         if KEYWORDS.include?(identifier) 
@@ -50,45 +48,21 @@ class Lexer
       elsif string = codon[/\A"([^"]*)"/, 1]
         tokens << [:STRING, string]
         index += string.size + 2 
-      
-    
-      elsif indent = codon[/\A\:\n( +)/m, 1] 
-        if indent.size <= current_indent 
-          raise "Bad indent level, got #{indent.size} indents, " +
-                "expected > #{current_indent}"
-        end
-        current_indent = indent.size
-        indent_stack.push(current_indent)
-        tokens << [:INDENT, indent.size]
-        index += indent.size + 2
+      elsif newline = codon[/\A(\n)/,1]
+        tokens << [:NEWLINE, "\n"]
+        index += 1
+      elsif forward_brak = codon[/\A(\{)/,1]
+        bracket_start+=1
+        tokens << [:START_BRACKET, forward_brak]
+        index+=1
+      elsif backward_brak = codon[/\A(\})/,1]
+         bracket_end +=1
+         raise "Extraneous closing brace #{code[index-5, index+5]}" if bracket_end > bracket_start
+         tokens << [:END_BRACKET, backward_brak]
+         index += 1
 
-      elsif indent = codon[/\A\n( *)/m, 1] 
-        if indent.size == current_indent 
-          tokens << [:NEWLINE, "\n"] 
-        elsif indent.size < current_indent 
-          while indent.size < current_indent
-            indent_stack.pop
-            current_indent = indent_stack.last || 0
-            tokens << [:DEDENT, indent.size]
-          end
-          tokens << [:NEWLINE, "\n"]
-        else 
-          raise "Missing ':'" 
-        end
-        index += indent.size + 1
-      # elsif forward_brak = codon[/\A(\{ *\n *)/,1]
-      #   bracket_start+=1
-      #   token << [:START_BRACKET, forward_brak]
-      #   index+=1
-      # elsif backward_brak = codon[/\A( *\} *\n})/,1]
-      #    bracket_end +=1
-      #    raise "Extraneous closing brace" if bracket_end > bracket_start
-      #    raised ""
-      #    token << [:END_BRACKET, backward_brak]
-      #    index += 1
-
-      #    bracket_end-=1
-      #    bracket_start-=1
+         bracket_end-=1
+         bracket_start-=1
       elsif operator = codon[/\A(\|\||&&|==|!=|<=|>=)/, 1]
         tokens << [operator, operator]
         index += operator.size
@@ -104,11 +78,9 @@ class Lexer
       end
       
     end
-    while indent = indent_stack.pop
-      tokens << [:DEDENT, indent_stack.first || 0]
-    end
+
     
-    # raise "Extraneous starting brace {"if bracket_start > bracket_end 
+    raise "Extraneous starting brace {"if bracket_start > bracket_end 
 
     tokens
   end

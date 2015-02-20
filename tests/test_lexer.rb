@@ -1,8 +1,8 @@
-require '../src/lexer.rb'
-require './test_helper.rb'
+require "./test_helper.rb"
+require "../src/lexer.rb"
 
 class LexerTest < Test::Unit::TestCase
-	def test_number
+  def test_number
     assert_equal [[:NUMBER, 1]], Lexer.new.tokenize("1")
   end
   
@@ -33,6 +33,7 @@ if 1:
     print("done!")
   2
 
+print "The End"
 CODE
     tokens = [
       [:IF, "if"], [:NUMBER, 1],                            # if 1:
@@ -58,6 +59,31 @@ CODE
     ]
     assert_equal tokens, Lexer.new.tokenize(code)
   end
-  
-  ## Exercise: Modify the lexer to delimit blocks with <code>{ ... }</code> instead of indentation.
+
+  def test_braket_lexer
+    require '../src/bracket_lexer.rb'
+    code = <<-CODE
+if 1 {
+  print "..."
+  if false {
+    pass
+  }
+  print "done!"
+}
+print "The End"
+CODE
+
+    tokens = [
+      [:IF, "if"], [:NUMBER, 1],
+      [:START_BRACKET, "{"], [:NEWLINE, "\n"],
+        [:IDENTIFIER, "print"], [:STRING, "..."], [:NEWLINE, "\n"],
+        [:IF, "if"], [:FALSE, "false"], [:START_BRACKET, "{"], [:NEWLINE, "\n"],
+          [:IDENTIFIER, "pass"], [:NEWLINE, "\n"],
+        [:END_BRACKET, "}"], [:NEWLINE, "\n"],
+        [:IDENTIFIER, "print"], [:STRING, "done!"], [:NEWLINE, "\n"],
+      [:END_BRACKET, "}"], [:NEWLINE, "\n"],
+      [:IDENTIFIER, "print"], [:STRING, "The End"]
+    ]
+    assert_equal tokens, BracketLexer.new.tokenize(code)
   end
+end
