@@ -1,0 +1,10 @@
+if !LOADED
+  print("File loaded!")
+  LOADED = true
+  require("test/require.yl")
+else
+  print("File required!")
+end
+
+# => File loaded!
+# => File required!

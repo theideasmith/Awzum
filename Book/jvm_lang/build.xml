@@ -1,0 +1,58 @@
+<project name="min" default="all">
+  <path id="build.classpath">
+    <fileset dir="build" includes="*.jar"/>
+    <fileset dir="vendor" includes="*.jar"/>
+  </path>
+  
+  <target name="all" depends="grammar,jar,test" />
+  
+  <target name="init">
+    <mkdir dir="build"/>
+    <mkdir dir="build/classes"/>
+    <uptodate property="grammar.notUpdated" targetfile="src/yourlang/lang/YourLangParser.java">
+      <srcfiles dir="src/yourlang/lang" includes="*.g"/>
+    </uptodate>
+  </target>
+  
+  <target name="grammar" depends="init" description="Generates source files from the ANTLR definitions"
+                         unless="grammar.notUpdated">
+    <java classname="org.antlr.Tool" maxmemory="750M" fork="true" dir="src/yourlang/lang" classpathref="build.classpath" failonerror="true">
+      <arg line="-Xconversiontimeout 60000 YourLangLexer.g YourLangParser.g"/>
+    </java>
+  </target>
+
+  <target name="compile" depends="init" description="Compile Java sources.">
+    <javac destdir="build/classes" debug="true" target="1.5">
+      <classpath refid="build.classpath"/>
+      <src path="src"/>
+      <include name="**/*.java"/>
+      <!-- <compilerarg value="-Xlint"/> -->
+    </javac>
+  </target>
+  
+  <target name="jar" depends="compile" description="Creates the jar file of the language.">
+    <jar destfile="build/yourlang.jar">
+      <fileset dir="build/classes">
+        <include name="**/*.class"/>
+        <include name="**/*.properties"/>
+      </fileset>
+      <zipfileset src="vendor/antlr-3.1.1.jar" includes="**/*"/>
+      <manifest>
+        <attribute name="Main-Class" value="yourlang.Main"/>
+      </manifest>
+    </jar>
+  </target>
+  
+  <target name="test" description="Runs the tests.">
+    <exec executable="ruby" failonerror="true">
+      <arg value="test/runner.rb"/>
+    </exec>
+  </target>
+
+  <target name="clean" description="Remove generated files and directories.">
+    <delete dir="build"/>
+    <delete>
+      <fileset dir="src/yourlang/lang" includes="*.tokens,*Lexer.java,*Parser.java"/>
+    </delete>
+  </target>
+</project>

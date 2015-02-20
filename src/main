@@ -1,0 +1,15 @@
+#!/usr/bin/env ruby 
+
+if file = ARGV.first && File.exists(ARGV.first)
+  interpreter.eval File.read(file)
+
+else
+  puts "Awzum REPL, CTRL+C to quit"
+  loop do
+    line = puts ">>"; gets.chomp     # Until Readline is implemented
+    # Readline::HISTORY.push(line)   # Fancy stuff for later. Focus on building core lang
+    value = interpreter.eval(line)         # 2. Eval
+    puts "=> #{value.ruby_value.inspect}"  # 3. Print
+  end                                      # 4. Loop
+  
+end

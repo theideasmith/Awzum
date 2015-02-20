@@ -1,0 +1,7 @@
+=begin
+
+This is the lexer for Awzum, the new name that I am giving to the language from the book, called Awesome. I intend to write my own code and then check it with the book so I am not just copying and pasting, but actually actively writing a language while being guided by the book. Awzum language is not going to be production ready because of the timeframe of its production and the amount of time I have to spend designing a production ready language, although I believe that if I had enough time, I would be able to create a production ready language, perhaps even with writing my own lexer and parser. I just have this feeling that I will eventually persevere. To create a production ready language, would need to follow the right design patterns and make optimizations, and all the stuff that comes when you make a real language. This is NOT a real production ready language and will just be me finding my way as I follow the book. So here is the lexer. 
+
+Some notes on the parser: I would use my own parsing framework and not Racc a suggested by the book just for the sake of doing things differently, which is what usually do, but because my summer is contingent on me getting things right in a certain timeframe, I dont want to deviate from the path and perhaps run into unexpected problems due the books dependency on a certain lexer. This might change though as I get more comfortable writing my own language. For now, I am going to build using the book's lexer and Racc(which is what I think the book uses. I haven't gotten to it though).
+
+So wish me luck.

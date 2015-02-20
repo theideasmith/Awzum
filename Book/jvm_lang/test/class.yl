@@ -1,0 +1,27 @@
+# Class definition
+
+print(self.class.name)
+# => Object
+
+# Same syntax as Ruby, "< Object" is implicit is no superclass is specified.
+class Language < Object
+  def initialize(name)
+    # Instance variable start with an @
+    @name = name
+  end
+  
+  def name
+    @name
+  end
+end
+
+# Calling "new" allocated a new object of that class and calls "initialize"
+# passing all the arguments.
+lang = Language.new("YourLang")
+
+print(lang.name)
+# => YourLang
+print(lang.class.name)
+# => Language
+print(Language.superclass.name)
+# => Object

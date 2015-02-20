@@ -1,0 +1,28 @@
+Revision 5
+* Improve all chapters based on Jeremy Ashkenas' review.
+* Pull most code comments into book's copy.
+* Expand comments and explanations around code.
+* Complete review of the VM and Compilation chapters.
+
+Revision 4
+* VM now works with the same runtime as the interpreter.
+* Include some details about Static Typing.
+
+Revision 3
+* Update LLVM code to use latest version of ruby-llvm (3.0.0)
+
+Revision 2
+* Updated LLVM code to use jvoorhis' ruby-llvm.
+* Update code to use Unit::Test for testing.
+* Add Lex, Rexical and Ragel grammar examples.
+* Add Yacc grammar rule example.
+* Add operator precedence to grammar.y and explanation in Parsing chapter.
+* Restructure runtime classes and expand chapter.
+* Move code evaluation to interpreter.rb.
+* New appendix: Mio, a minimalist homoiconic language, including a new language.
+
+Revision 1
+* Fixed setup.rb script in JVM language.
+* Added section on Operator Precedence in Parser chapter.
+* Added chapter on Compilation using LLVM with code example.
+* Added chapter on Virtual Machine with code example.
