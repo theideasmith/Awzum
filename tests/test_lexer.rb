@@ -1,4 +1,4 @@
-require "./test_helper.rb"
+require "./Unit_Test_Helper.rb"
 require "../src/lexer.rb"
 
 class LexerTest < Test::Unit::TestCase

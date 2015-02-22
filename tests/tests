@@ -1,0 +1,10 @@
+#!/usr/bin/env ruby 
+
+#A more automated approached to unit tests
+Dir.foreach(Dir.pwd) do |filename|
+	if filename.match /test_[a-z]+/
+	 	puts "Adding #{filename.capitalize.gsub("_"," ")} to test queue"
+	 	file = filename
+	 	system "ruby #{file}" if File.exists? file
+	end
+end
